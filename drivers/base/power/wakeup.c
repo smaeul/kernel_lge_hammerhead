@@ -386,7 +386,7 @@ static void wakeup_source_activate(struct wakeup_source *ws)
 		ws->start_prevent_time = ws->last_time;
 
 	/* Increment the counter of events in progress. */
-	cec = atomic_inc_return(&combined_event_count);
+	cec = atomic_inc_return_unchecked(&combined_event_count);
 
 	trace_wakeup_source_activate(ws->name, cec);
 }
@@ -512,7 +512,7 @@ static void wakeup_source_deactivate(struct wakeup_source *ws)
 	 * Increment the counter of registered wakeup events and decrement the
 	 * couter of wakeup events in progress simultaneously.
 	 */
-	cec = atomic_add_return(MAX_IN_PROGRESS, &combined_event_count);
+	cec = atomic_add_return_unchecked(MAX_IN_PROGRESS, &combined_event_count);
 	trace_wakeup_source_deactivate(ws->name, cec);
 
 	split_counters(&cnt, &inpr);

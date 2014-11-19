@@ -81,15 +81,15 @@ static int fifo_open(struct inode *inode, struct file *filp)
 	 *  errno=ENXIO when there is no process reading the FIFO.
 	 */
 		ret = -ENXIO;
-		if ((filp->f_flags & O_NONBLOCK) && !pipe->readers)
+		if ((filp->f_flags & O_NONBLOCK) && !atomic_read(&pipe->readers))
 			goto err;
 
 		filp->f_op = &write_pipefifo_fops;
 		pipe->w_counter++;
-		if (!pipe->writers++)
+		if (atomic_inc_return(&pipe->writers) == 1)
 			wake_up_partner(inode);
 
-		if (!pipe->readers) {
+		if (!atomic_read(&pipe->readers)) {
 			wait_for_partner(inode, &pipe->r_counter);
 			if (signal_pending(current))
 				goto err_wr;
