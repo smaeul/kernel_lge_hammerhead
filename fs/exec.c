@@ -1992,7 +1992,9 @@ void pax_report_refcount_overflow(struct pt_regs *regs)
 	printk(KERN_ERR "PAX: refcount overflow detected in: %s:%d, uid/euid: %u/%u\n",
 			 current->comm, task_pid_nr(current), current_uid(), current_euid());
 	print_symbol(KERN_ERR "PAX: refcount overflow occured at: %s\n", instruction_pointer(regs));
+	preempt_disable();
 	show_regs(regs);
+	preempt_enable();
 	force_sig_info(SIGKILL, SEND_SIG_FORCED, current);
 }
 #endif
@@ -2063,7 +2065,7 @@ void check_object_size(const void *ptr, unsigned long n, bool to)
 	if (!n)
 		return;
 
-	type = check_heap_object(ptr, n, to);
+	type = check_heap_object(ptr, n);
 	if (!type) {
 		if (check_stack_object(ptr, n) != -1)
 			return;

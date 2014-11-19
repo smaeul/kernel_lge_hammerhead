@@ -364,6 +364,10 @@ choice
 	  Select the method used to instrument function pointer dereferences.
 	  Note that binary modules cannot be instrumented by this approach.
 
+	  Note that the implementation requires a gcc with plugin support,
+	  i.e., gcc 4.5 or newer.  You may need to install the supporting
+	  headers explicitly in addition to the normal gcc package.
+
 	config PAX_KERNEXEC_PLUGIN_METHOD_BTS
 		bool "bts"
 		help
@@ -494,23 +498,35 @@ config PAX_MEMORY_SANITIZE
 	bool "Sanitize all freed memory"
 	depends on !HIBERNATION
 	help
-	  By saying Y here the kernel will erase memory pages as soon as they
-	  are freed.  This in turn reduces the lifetime of data stored in the
-	  pages, making it less likely that sensitive information such as
-	  passwords, cryptographic secrets, etc stay in memory for too long.
+	  By saying Y here the kernel will erase memory pages and slab objects
+	  as soon as they are freed.  This in turn reduces the lifetime of data
+	  stored in them, making it less likely that sensitive information such
+	  as passwords, cryptographic secrets, etc stay in memory for too long.
 
 	  This is especially useful for programs whose runtime is short, long
 	  lived processes and the kernel itself benefit from this as long as
-	  they operate on whole memory pages and ensure timely freeing of pages
-	  that may hold sensitive information.
+	  they ensure timely freeing of memory that may hold sensitive
+	  information.
+
+	  A nice side effect of the sanitization of slab objects is the
+	  reduction of possible info leaks caused by padding bytes within the
+	  leaky structures.  Use-after-free bugs for structures containing
+	  pointers can also be detected as dereferencing the sanitized pointer
+	  will generate an access violation.
 
 	  The tradeoff is performance impact, on a single CPU system kernel
 	  compilation sees a 3% slowdown, other systems and workloads may vary
 	  and you are advised to test this feature on your expected workload
 	  before deploying it.
 
-	  Note that this feature does not protect data stored in live pages,
-	  e.g., process memory swapped to disk may stay there for a long time.
+	  The slab sanitization feature excludes a few slab caches per default
+	  for performance reasons.  To extend the feature to cover those as
+	  well, pass "pax_sanitize_slab=full" as kernel command line parameter.
+
+	  To reduce the performance penalty by sanitizing pages only, albeit
+	  limiting the effectiveness of this feature at the same time, slab
+	  sanitization can be disabled with the kernel command line parameter
+	  "pax_sanitize_slab=off".
 
 config PAX_MEMORY_STACKLEAK
 	bool "Sanitize kernel stack"
