@@ -683,6 +683,16 @@ static int mbind_range(struct mm_struct *mm, unsigned long start,
 		err = policy_vma(vma, new_pol);
 		if (err)
 			goto out;
+
+#ifdef CONFIG_PAX_SEGMEXEC
+		vma_m = pax_find_mirror_vma(vma);
+		if (vma_m && vma_m->vm_ops && vma_m->vm_ops->set_policy) {
+			err = vma_m->vm_ops->set_policy(vma_m, new_pol);
+			if (err)
+				goto out;
+		}
+#endif
+
 	}
 
  out:

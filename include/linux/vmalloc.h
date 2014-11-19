@@ -21,6 +21,10 @@ struct vm_area_struct;		/* vma defining user mapping in mm_types.h */
 
 /* bits [20..32] reserved for arch specific ioremap internals */
 
+#if defined(CONFIG_MODULES) && defined(CONFIG_X86) && defined(CONFIG_PAX_KERNEXEC)
+#define VM_KERNEXEC	0x00000080	/* allocate from executable kernel memory range */
+#endif
+
 /*
  * Maximum alignment for ioremap() regions.
  * Can be overriden by arch-specific value.
@@ -67,7 +71,7 @@ extern void *vmalloc_32_user(unsigned long size);
 extern void *__vmalloc(unsigned long size, gfp_t gfp_mask, pgprot_t prot);
 extern void *__vmalloc_node_range(unsigned long size, unsigned long align,
 			unsigned long start, unsigned long end, gfp_t gfp_mask,
-			pgprot_t prot, int node, const void *caller);
+			pgprot_t prot, int node, const void *caller) __size_overflow(1);
 extern void vfree(const void *addr);
 
 extern void *vmap(struct page **pages, unsigned int count,
