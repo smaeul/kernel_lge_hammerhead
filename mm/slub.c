@@ -187,7 +187,7 @@ static enum {
 	PARTIAL,	/* Kmem_cache_node works */
 	UP,		/* Everything works but does not show up in sysfs */
 	SYSFS		/* Sysfs up */
-} slab_state = DOWN;
+} slab_state __read_only = DOWN;
 
 /* A list of all slab caches on the system */
 static DECLARE_RWSEM(slub_lock);
@@ -2570,6 +2570,14 @@ static __always_inline void slab_free(struct kmem_cache *s,
 
 	slab_free_hook(s, x);
 
+#ifdef CONFIG_PAX_MEMORY_SANITIZE
+	if (!(s->flags & SLAB_NO_SANITIZE)) {
+		memset(x, PAX_MEMORY_SANITIZE_VALUE, s->objsize);
+		if (s->ctor)
+			s->ctor(x);
+	}
+#endif
+
 redo:
 	/*
 	 * Determine the currently cpus per cpu slab.
@@ -2945,6 +2953,9 @@ static int calculate_sizes(struct kmem_cache *s, int forced_order)
 	s->inuse = size;
 
 	if (((flags & (SLAB_DESTROY_BY_RCU | SLAB_POISON)) ||
+#ifdef CONFIG_PAX_MEMORY_SANITIZE
+		(!(flags & SLAB_NO_SANITIZE)) ||
+#endif
 		s->ctor)) {
 		/*
 		 * Relocate free pointer after the object if it is not
@@ -3428,6 +3439,9 @@ bool is_usercopy_object(const void *ptr)
 	if (ZERO_OR_NULL_PTR(ptr))
 		return false;
 
+	if (!slab_is_available())
+		return false;
+
 	if (!virt_addr_valid(ptr))
 		return false;
 
@@ -3441,7 +3455,7 @@ bool is_usercopy_object(const void *ptr)
 }
 
 #ifdef CONFIG_PAX_USERCOPY
-const char *check_heap_object(const void *ptr, unsigned long n, bool to)
+const char *check_heap_object(const void *ptr, unsigned long n)
 {
 	struct page *page;
 	struct kmem_cache *s;
@@ -3534,6 +3548,7 @@ void kfree(const void *x)
 	if (unlikely(ZERO_OR_NULL_PTR(x)))
 		return;
 
+	VM_BUG_ON(!virt_addr_valid(x));
 	page = virt_to_head_page(x);
 	if (unlikely(!PageSlab(page))) {
 		BUG_ON(!PageCompound(page));
@@ -4015,6 +4030,14 @@ struct kmem_cache *kmem_cache_create(const char *name, size_t size,
 		return NULL;
 
 	down_write(&slub_lock);
+
+#ifdef CONFIG_PAX_MEMORY_SANITIZE
+	if (pax_sanitize_slab == PAX_SANITIZE_SLAB_OFF || (flags & SLAB_DESTROY_BY_RCU))
+		flags |= SLAB_NO_SANITIZE;
+	else if (pax_sanitize_slab == PAX_SANITIZE_SLAB_FULL)
+		flags &= ~SLAB_NO_SANITIZE;
+#endif
+
 	s = find_mergeable(size, align, flags, name, ctor);
 	if (s) {
 		atomic_inc(&s->refcount);
@@ -4097,7 +4120,7 @@ static int __cpuinit slab_cpuup_callback(struct notifier_block *nfb,
 	return NOTIFY_OK;
 }
 
-static struct notifier_block __cpuinitdata slab_notifier = {
+static struct notifier_block slab_notifier = {
 	.notifier_call = slab_cpuup_callback
 };
 
