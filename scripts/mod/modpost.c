@@ -2169,7 +2169,7 @@ int main(int argc, char **argv)
 			warn_unresolved = 1;
 			break;
 		case 'E':
-			section_error_on_mismatch = 1;
+			/* ignored due to PaX */
 			break;
 		default:
 			exit(1);
