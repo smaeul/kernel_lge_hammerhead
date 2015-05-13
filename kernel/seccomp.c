@@ -336,7 +336,7 @@ static inline void seccomp_sync_threads(void)
 		 */
 		put_seccomp_filter(thread);
 		smp_mb();
-		ACCESS_ONCE(thread->seccomp.filter) = caller->seccomp.filter;
+		ACCESS_ONCE_RW(thread->seccomp.filter) = caller->seccomp.filter;
 		/*
 		 * Opt the other thread into seccomp if needed.
 		 * As threads are considered to be trust-realm
