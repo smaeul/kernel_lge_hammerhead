@@ -9,6 +9,7 @@
  * Copyright 1993, 1994: Eric Youngdale (ericy@cais.com).
  */
 
+#include <linux/android_aid.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/fs.h>
@@ -879,6 +880,37 @@ static long pax_parse_pax_flags(const struct elfhdr * const elf_ex, const struct
 }
 #endif
 
+static bool pax_has_aids_xattr(struct dentry *dentry)
+{
+	struct inode *inode = dentry->d_inode;
+
+	if (inode_permission(inode, MAY_EXEC))
+		return false;
+
+	if (inode->i_op->getxattr)
+		return inode->i_op->getxattr(dentry, XATTR_NAME_PAX_AIDS, NULL, 0) >= 0;
+
+	return false;
+}
+
+static void pax_handle_aids(struct file * const file)
+{
+	if (!pax_has_aids_xattr(file->f_path.dentry))
+		return;
+#ifdef CONFIG_PAX_PAGEEXEC
+	if (in_group_p(AID_PAX_NO_PAGEEXEC))
+		current->mm->pax_flags &= ~MF_PAX_PAGEEXEC;
+#endif
+#ifdef CONFIG_PAX_MPROTECT
+	if (in_group_p(AID_PAX_NO_MPROTECT))
+		current->mm->pax_flags &= ~MF_PAX_MPROTECT;
+#endif
+#if defined(CONFIG_PAX_RANDMMAP) || defined(CONFIG_PAX_RANDUSTACK)
+	if (in_group_p(AID_PAX_NO_RANDMMAP))
+		current->mm->pax_flags &= ~MF_PAX_RANDMMAP;
+#endif
+}
+
 /*
  * These are the functions used to load ELF style executables and shared
  * libraries.  There is no binary dependent code anywhere else.
@@ -1093,6 +1125,8 @@ static int load_elf_binary(struct linux_binprm *bprm, struct pt_regs *regs)
 		goto out_free_dentry;
 	}
 #endif
+
+	pax_handle_aids(bprm->file);
 
 #ifdef CONFIG_PAX_HAVE_ACL_FLAGS
 	pax_set_initial_flags(bprm);

@@ -25,4 +25,8 @@
 #define AID_NET_BW_STATS 3006  /* read bandwidth statistics */
 #define AID_NET_BW_ACCT  3007  /* change bandwidth statistics accounting */
 
+#define AID_PAX_NO_PAGEEXEC 3010  /* disable PaX's PAGEEXEC feature */
+#define AID_PAX_NO_MPROTECT 3011  /* disable PaX's MPROTECT feature */
+#define AID_PAX_NO_RANDMMAP 3012  /* disable PaX's RANDMMAP feature */
+
 #endif
