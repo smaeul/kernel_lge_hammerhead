@@ -1,0 +1,11 @@
+--- drivers/net/wireless/rt2x00/rt2x00.h	2012-06-18 15:06:37.485573810 +0200
++++ drivers/net/wireless/rt2x00/rt2x00.h	2012-06-18 15:08:25.157577000 +0200
+@@ -396,7 +396,7 @@ struct rt2x00_intf {
+	 * for hardware which doesn't support hardware
+	 * sequence counting.
+	 */
+-	atomic_t seqno;
++	atomic_unchecked_t seqno;
+ };
+
+ static inline struct rt2x00_intf* vif_to_intf(struct ieee80211_vif *vif)

@@ -156,7 +156,11 @@ enum
 	KERN_BOOT_REASON = 77, /* int: identify reason system was booted */
 };
 
-
+#ifdef CONFIG_PAX_SOFTMODE
+enum {
+	PAX_SOFTMODE=1		/* PaX: disable/enable soft mode */
+};
+#endif
 
 /* CTL_VM names: */
 enum

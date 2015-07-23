@@ -1,0 +1,20 @@
+--- drivers/base/power/wakeup.c	2012-05-21 11:32:59.075927747 +0200
++++ drivers/base/power/wakeup.c	2012-05-21 12:10:09.948048911 +0200
+@@ -379,7 +379,7 @@ static void wakeup_source_activate(struc
+	ws->last_time = ktime_get();
+
+	/* Increment the counter of events in progress. */
+-	atomic_inc(&combined_event_count);
++	atomic_inc_unchecked(&combined_event_count);
+ }
+
+ /**
+@@ -475,7 +475,7 @@ static void wakeup_source_deactivate(str
+	 * Increment the counter of registered wakeup events and decrement the
+	 * couter of wakeup events in progress simultaneously.
+	 */
+-	atomic_add(MAX_IN_PROGRESS, &combined_event_count);
++	atomic_add_unchecked(MAX_IN_PROGRESS, &combined_event_count);
+ }
+
+ /**
