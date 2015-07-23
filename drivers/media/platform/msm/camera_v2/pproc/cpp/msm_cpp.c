@@ -31,6 +31,7 @@
 #include <mach/iommu.h>
 #include <mach/vreg.h>
 #include <media/msm_isp.h>
+#include <media/v4l2-dev.h>
 #include <media/v4l2-event.h>
 #include <media/v4l2-ioctl.h>
 #include <media/msmb_camera.h>
@@ -1736,7 +1737,7 @@ static const struct v4l2_subdev_ops msm_cpp_subdev_ops = {
 	.core = &msm_cpp_subdev_core_ops,
 };
 
-static struct v4l2_file_operations msm_cpp_v4l2_subdev_fops;
+static v4l2_file_operations_no_const msm_cpp_v4l2_subdev_fops;
 
 static long msm_cpp_subdev_do_ioctl(
 	struct file *file, unsigned int cmd, void *arg)
