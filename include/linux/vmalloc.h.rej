@@ -1,0 +1,11 @@
+--- include/linux/vmalloc.h	2012-03-19 10:39:11.388049209 +0100
++++ include/linux/vmalloc.h	2012-05-22 15:28:31.531384607 +0200
+@@ -67,7 +72,7 @@ extern void *vmalloc_32_user(unsigned lo
+ extern void *__vmalloc(unsigned long size, gfp_t gfp_mask, pgprot_t prot);
+ extern void *__vmalloc_node_range(unsigned long size, unsigned long align,
+			unsigned long start, unsigned long end, gfp_t gfp_mask,
+-			pgprot_t prot, int node, void *caller);
++			pgprot_t prot, int node, void *caller) __size_overflow(1);
+ extern void vfree(const void *addr);
+
+ extern void *vmap(struct page **pages, unsigned int count,

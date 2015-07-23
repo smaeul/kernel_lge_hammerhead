@@ -30,14 +30,14 @@ bool events_check_enabled __read_mostly;
  * They need to be modified together atomically, so it's better to use one
  * atomic variable to hold them both.
  */
-static atomic_t combined_event_count = ATOMIC_INIT(0);
+static atomic_unchecked_t combined_event_count = ATOMIC_INIT(0);
 
 #define IN_PROGRESS_BITS	(sizeof(int) * 4)
 #define MAX_IN_PROGRESS		((1 << IN_PROGRESS_BITS) - 1)
 
 static void split_counters(unsigned int *cnt, unsigned int *inpr)
 {
-	unsigned int comb = atomic_read(&combined_event_count);
+	unsigned int comb = atomic_read_unchecked(&combined_event_count);
 
 	*cnt = (comb >> IN_PROGRESS_BITS);
 	*inpr = comb & MAX_IN_PROGRESS;
