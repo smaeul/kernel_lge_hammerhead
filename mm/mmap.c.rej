@@ -1,0 +1,80 @@
+--- mm/mmap.c	2012-05-21 11:33:40.107929975 +0200
++++ mm/mmap.c	2012-05-22 16:53:56.195111150 +0200
+@@ -711,6 +732,12 @@ static int
+ can_vma_merge_before(struct vm_area_struct *vma, unsigned long vm_flags,
+	struct anon_vma *anon_vma, struct file *file, pgoff_t vm_pgoff)
+ {
++
++#ifdef CONFIG_PAX_SEGMEXEC
++	if ((vma->vm_mm->pax_flags & MF_PAX_SEGMEXEC) && vma->vm_start == SEGMEXEC_TASK_SIZE)
++		return 0;
++#endif
++
+	if (is_mergeable_vma(vma, file, vm_flags) &&
+	    is_mergeable_anon_vma(anon_vma, vma->anon_vma, vma)) {
+		if (vma->vm_pgoff == vm_pgoff)
+@@ -730,6 +757,12 @@ static int
+ can_vma_merge_after(struct vm_area_struct *vma, unsigned long vm_flags,
+	struct anon_vma *anon_vma, struct file *file, pgoff_t vm_pgoff)
+ {
++
++#ifdef CONFIG_PAX_SEGMEXEC
++	if ((vma->vm_mm->pax_flags & MF_PAX_SEGMEXEC) && vma->vm_end == SEGMEXEC_TASK_SIZE)
++		return 0;
++#endif
++
+	if (is_mergeable_vma(vma, file, vm_flags) &&
+	    is_mergeable_anon_vma(anon_vma, vma->anon_vma, vma)) {
+		pgoff_t vm_pglen;
+@@ -772,13 +805,20 @@ can_vma_merge_after(struct vm_area_struc
+ struct vm_area_struct *vma_merge(struct mm_struct *mm,
+			struct vm_area_struct *prev, unsigned long addr,
+			unsigned long end, unsigned long vm_flags,
+-		     	struct anon_vma *anon_vma, struct file *file,
++			struct anon_vma *anon_vma, struct file *file,
+			pgoff_t pgoff, struct mempolicy *policy)
+ {
+	pgoff_t pglen = (end - addr) >> PAGE_SHIFT;
+	struct vm_area_struct *area, *next;
+	int err;
+
++#ifdef CONFIG_PAX_SEGMEXEC
++	unsigned long addr_m = addr + SEGMEXEC_TASK_SIZE, end_m = end + SEGMEXEC_TASK_SIZE;
++	struct vm_area_struct *area_m = NULL, *next_m = NULL, *prev_m = NULL;
++
++	BUG_ON((mm->pax_flags & MF_PAX_SEGMEXEC) && SEGMEXEC_TASK_SIZE < end);
++#endif
++
+	/*
+	 * We later require that vma->vm_flags == vm_flags,
+	 * so this tests vma->vm_flags & VM_SPECIAL, too.
+@@ -853,12 +917,27 @@ struct vm_area_struct *vma_merge(struct
+			mpol_equal(policy, vma_policy(next)) &&
+			can_vma_merge_before(next, vm_flags,
+					anon_vma, file, pgoff+pglen)) {
+-		if (prev && addr < prev->vm_end)	/* case 4 */
++		if (prev && addr < prev->vm_end) {	/* case 4 */
+			err = vma_adjust(prev, prev->vm_start,
+				addr, prev->vm_pgoff, NULL);
+-		else					/* cases 3, 8 */
++
++#ifdef CONFIG_PAX_SEGMEXEC
++			if (!err && prev_m)
++				err = vma_adjust(prev_m, prev_m->vm_start,
++						addr_m, prev_m->vm_pgoff, NULL);
++#endif
++
++		} else {				/* cases 3, 8 */
+			err = vma_adjust(area, addr, next->vm_end,
+				next->vm_pgoff - pglen, NULL);
++
++#ifdef CONFIG_PAX_SEGMEXEC
++			if (!err && area_m)
++				err = vma_adjust(area_m, addr_m, next_m->vm_end,
++						next_m->vm_pgoff - pglen, NULL);
++#endif
++
++		}
+		if (err)
+			return NULL;
+		khugepaged_enter_vma_merge(area);

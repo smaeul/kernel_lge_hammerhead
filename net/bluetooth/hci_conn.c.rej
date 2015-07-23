@@ -1,0 +1,11 @@
+--- net/bluetooth/hci_conn.c	2012-05-21 11:33:40.823930014 +0200
++++ net/bluetooth/hci_conn.c	2012-05-21 12:10:12.088049029 +0200
+@@ -233,7 +233,7 @@ void hci_le_ltk_reply(struct hci_conn *c
+	memset(&cp, 0, sizeof(cp));
+
+	cp.handle = cpu_to_le16(conn->handle);
+-	memcpy(cp.ltk, ltk, sizeof(ltk));
++	memcpy(cp.ltk, ltk, sizeof(cp.ltk));
+
+	hci_send_cmd(hdev, HCI_OP_LE_LTK_REPLY, sizeof(cp), &cp);
+ }

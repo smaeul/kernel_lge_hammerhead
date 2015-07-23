@@ -1,0 +1,9 @@
+--- kernel/power/process.c	2012-05-21 11:33:39.551929945 +0200
++++ kernel/power/process.c	2012-05-21 12:10:11.796049012 +0200
+@@ -33,6 +33,7 @@ static int try_to_freeze_tasks(bool user
+	u64 elapsed_csecs64;
+	unsigned int elapsed_csecs;
+	bool wakeup = false;
++	bool timedout = false;
+
+	do_gettimeofday(&start);
