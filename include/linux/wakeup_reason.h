@@ -63,7 +63,7 @@ static inline void start_logging_wakeup_reasons(void)
 {
 	extern bool log_wakeups;
 	extern struct completion wakeups_completion;
-	ACCESS_ONCE(log_wakeups) = true;
+	ACCESS_ONCE_RW(log_wakeups) = true;
 	init_completion(&wakeups_completion);
 }
 
