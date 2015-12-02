@@ -316,7 +316,7 @@ static struct attribute_group attr_group = {
 
 static inline void stop_logging_wakeup_reasons(void)
 {
-	ACCESS_ONCE(log_wakeups) = false;
+	ACCESS_ONCE_RW(log_wakeups) = false;
 	smp_wmb();
 }
 
