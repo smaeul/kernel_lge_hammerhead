@@ -5,7 +5,7 @@ ifeq ($(TARGET_PREBUILT_KERNEL),)
 
 KERNEL_OUT := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ
 KERNEL_CONFIG := $(KERNEL_OUT)/.config
-TARGET_PREBUILT_INT_KERNEL := $(KERNEL_OUT)/arch/arm/boot/zImage
+TARGET_PREBUILT_INT_KERNEL := $(KERNEL_OUT)/arch/arm/boot/zImage-dtb
 KERNEL_HEADERS_INSTALL := $(KERNEL_OUT)/usr
 KERNEL_MODULES_INSTALL := system
 KERNEL_MODULES_OUT := $(TARGET_OUT)/lib/modules
@@ -34,33 +34,37 @@ mpath=`dirname $$mdpath`; rm -rf $$mpath;\
 fi
 endef
 
+FULL_KERNEL_OUT = $(shell readlink -e $(KERNEL_OUT))
+
 $(KERNEL_OUT):
 	mkdir -p $(KERNEL_OUT)
 
 $(KERNEL_CONFIG): $(KERNEL_OUT)
-	$(MAKE) -C kernel O=../$(KERNEL_OUT) ARCH=arm CROSS_COMPILE=arm-eabi- $(KERNEL_DEFCONFIG)
+	env KBUILD_OUTPUT=$(FULL_KERNEL_OUT) PATH=$(shell pwd)/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8/bin:$(PATH) \
+	$(MAKE) -C $(KERNEL_DIR) ARCH=arm CROSS_COMPILE=arm-eabi- $(KERNEL_DEFCONFIG)
 
 $(KERNEL_OUT)/piggy : $(TARGET_PREBUILT_INT_KERNEL)
 	$(hide) gunzip -c $(KERNEL_OUT)/arch/arm/boot/compressed/piggy.gzip > $(KERNEL_OUT)/piggy
 
 $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_OUT) $(KERNEL_CONFIG) $(KERNEL_HEADERS_INSTALL)
-	$(MAKE) -C kernel O=../$(KERNEL_OUT) ARCH=arm CROSS_COMPILE=arm-eabi-
-	$(MAKE) -C kernel O=../$(KERNEL_OUT) ARCH=arm CROSS_COMPILE=arm-eabi- modules
-	$(MAKE) -C kernel O=../$(KERNEL_OUT) INSTALL_MOD_PATH=../../$(KERNEL_MODULES_INSTALL) INSTALL_MOD_STRIP=1 ARCH=arm CROSS_COMPILE=arm-eabi- modules_install
-	$(mv-modules)
-	$(clean-module-folder)
+	env KBUILD_OUTPUT=$(FULL_KERNEL_OUT) PATH=$(shell pwd)/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8/bin:$(PATH) \
+	$(MAKE) -C $(KERNEL_DIR) ARCH=arm CROSS_COMPILE=arm-eabi- zImage-dtb
 
 $(KERNEL_HEADERS_INSTALL): $(KERNEL_OUT) $(KERNEL_CONFIG)
-	$(MAKE) -C kernel O=../$(KERNEL_OUT) ARCH=arm CROSS_COMPILE=arm-eabi- headers_install
+	env KBUILD_OUTPUT=$(FULL_KERNEL_OUT) PATH=$(shell pwd)/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8/bin:$(PATH) \
+	$(MAKE) -C $(KERNEL_DIR) ARCH=arm CROSS_COMPILE=arm-eabi- headers_install
 
 kerneltags: $(KERNEL_OUT) $(KERNEL_CONFIG)
-	$(MAKE) -C kernel O=../$(KERNEL_OUT) ARCH=arm CROSS_COMPILE=arm-eabi- tags
+	env KBUILD_OUTPUT=$(FULL_KERNEL_OUT) PATH=$(shell pwd)/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8/bin:$(PATH) \
+	$(MAKE) -C $(KERNEL_DIR) ARCH=arm CROSS_COMPILE=arm-eabi- tags
 
 kernelconfig: $(KERNEL_OUT) $(KERNEL_CONFIG)
+	env KBUILD_OUTPUT=$(FULL_KERNEL_OUT) PATH=$(shell pwd)/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8/bin:$(PATH) \
 	env KCONFIG_NOTIMESTAMP=true \
-	     $(MAKE) -C kernel O=../$(KERNEL_OUT) ARCH=arm CROSS_COMPILE=arm-eabi- menuconfig
+	     $(MAKE) -C $(KERNEL_DIR) ARCH=arm CROSS_COMPILE=arm-eabi- menuconfig
+	env KBUILD_OUTPUT=$(FULL_KERNEL_OUT) PATH=$(shell pwd)/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8/bin:$(PATH) \
 	env KCONFIG_NOTIMESTAMP=true \
-	     $(MAKE) -C kernel O=../$(KERNEL_OUT) ARCH=arm CROSS_COMPILE=arm-eabi- savedefconfig
+	     $(MAKE) -C $(KERNEL_DIR) ARCH=arm CROSS_COMPILE=arm-eabi- savedefconfig
 	cp $(KERNEL_OUT)/defconfig kernel/arch/arm/configs/$(KERNEL_DEFCONFIG)
 
 endif
