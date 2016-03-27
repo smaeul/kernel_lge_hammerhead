@@ -348,6 +348,14 @@ static void mdss_fb_remove_sysfs(struct msm_fb_data_type *mfd)
 	sysfs_remove_group(&mfd->fbi->dev->kobj, &mdss_fb_attr_group);
 }
 
+static int __init mdss_default_color_temp(void)
+{
+	mdss_set_rgb(NULL, NULL, "32768 20821 12072", 19);
+	return 0;
+}
+
+late_initcall(mdss_default_color_temp);
+
 static void mdss_fb_shutdown(struct platform_device *pdev)
 {
 	struct msm_fb_data_type *mfd = platform_get_drvdata(pdev);
