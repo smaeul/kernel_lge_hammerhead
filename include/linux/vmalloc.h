@@ -21,10 +21,6 @@ struct vm_area_struct;		/* vma defining user mapping in mm_types.h */
 
 /* bits [20..32] reserved for arch specific ioremap internals */
 
-#if defined(CONFIG_MODULES) && defined(CONFIG_X86) && defined(CONFIG_PAX_KERNEXEC)
-#define VM_KERNEXEC	0x00000080	/* allocate from executable kernel memory range */
-#endif
-
 /*
  * Maximum alignment for ioremap() regions.
  * Can be overriden by arch-specific value.
